@@ -1,1 +1,634 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>本の箱詰め計算ツール｜この箱に何冊入る？</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f4ef;--card:#fff;--fg:#1f2430;--sub:#6b7280;--line:#d9d5ca;--acc:#d9480f;--acc2:#1c6fd1;--acc3:#7048e8;--ok:#2b8a3e;--warn:#e67700;--ng:#c92a2a;--dis:#ece9e1}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171c;--card:#1f232b;--fg:#eceff4;--sub:#9aa3b2;--line:#363c48;--acc:#ff8a4c;--acc2:#6aa8ff;--acc3:#b197fc;--ok:#69db7c;--warn:#ffa94d;--ng:#ff8787;--dis:#2a2f39}}
+:root[data-theme="dark"]{--bg:#15171c;--card:#1f232b;--fg:#eceff4;--sub:#9aa3b2;--line:#363c48;--acc:#ff8a4c;--acc2:#6aa8ff;--acc3:#b197fc;--ok:#69db7c;--warn:#ffa94d;--ng:#ff8787;--dis:#2a2f39}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Hiragino Sans","Noto Sans JP",Meiryo,sans-serif;line-height:1.6;overflow-x:hidden}
+main{max-width:640px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:1.3rem;margin:4px 0 4px}
+.lead{color:var(--sub);font-size:.85rem;margin:0 0 14px}
+section.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{font-size:1rem;margin:0 0 10px}
+.radios{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.radios.three{grid-template-columns:repeat(3,1fr)}
+.radios label{display:flex;align-items:center;gap:6px;min-height:48px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:.95rem}
+.radios input{width:20px;height:20px;accent-color:var(--acc)}
+.radios label:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
+.fields{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.fields label{font-size:.78rem;color:var(--sub);display:block}
+input[type=number]{width:100%;height:48px;font-size:1rem;padding:0 8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
+input[type=number]:disabled{background:var(--dis);color:var(--sub);cursor:not-allowed}
+.chk{display:flex;align-items:center;gap:8px;min-height:44px}
+.chk input{width:22px;height:22px;accent-color:var(--acc)}
+.note{font-size:.8rem;color:var(--sub);margin:6px 0 0}
+button.go{width:100%;height:56px;font-size:1.1rem;font-weight:700;border:0;border-radius:14px;background:var(--acc);color:#fff;cursor:pointer}
+.err{color:var(--ng);font-weight:600;margin:0}
+.big{font-size:2.2rem;font-weight:800;line-height:1.2;margin:0}
+.big small{font-size:1rem;font-weight:600}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:700;color:#fff}
+.b-ok{background:var(--ok)}.b-caution{background:#f08c00}.b-warn{background:var(--warn)}.b-ng{background:var(--ng)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+.pv{width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.legend{display:flex;gap:14px;font-size:.8rem;color:var(--sub);margin:6px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ph{border:1px dashed var(--line);border-radius:10px;min-height:84px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;color:var(--sub);padding:6px}
+a.aff::before{content:'PR ';font-size:.7rem;font-weight:700;background:var(--acc2);color:#fff;border-radius:4px;padding:1px 5px;margin-right:6px;vertical-align:1px}
+a.aff{display:block;text-align:center;padding:14px;border-radius:12px;border:2px solid var(--acc2);color:var(--acc2);font-weight:700;text-decoration:none}
+.warnline{margin:4px 0;font-size:.88rem}
+.hide{display:none}
+.adslot{margin:14px 0;text-align:center;overflow:hidden}
+.adslot .adl{display:block;font-size:.7rem;color:var(--sub);margin-bottom:2px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 12px}
+.tabs button{min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);font-size:.88rem;font-weight:600;cursor:pointer}
+.tabs button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.fields.f4{grid-template-columns:repeat(4,1fr)}
+.row{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+.rh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.rh select{flex:1;height:44px;font-size:.95rem;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);padding:0 8px}
+.rh button,.add{min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);padding:0 12px;cursor:pointer;font-size:.9rem}
+.add{width:100%;border-style:dashed}
+.bx{margin-bottom:10px}
+.lt{min-width:4.2em;font-size:.95rem}
+.vs{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.vp{flex:0 0 100%;scroll-snap-align:start;min-width:0}
+.vp p{margin:0 0 4px}
+details.clr{margin-top:8px;font-size:.85rem;color:var(--sub)}
+details.clr summary{cursor:pointer;font-weight:600;color:var(--fg)}
+details.clr table{margin:6px 0}
+footer.ft{margin-top:24px;padding-top:14px;border-top:1px solid var(--line);font-size:.78rem;color:var(--sub);text-align:center}
+footer.ft p{margin:4px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>本の箱詰め計算ツール</h1>
+<p class="lead">箱のサイズを入力すると、実際に詰められる冊数と置き方がわかります。</p>
+<p class="lead" style="font-size:.75rem">【PR】本ページはアフィリエイト広告（Amazonアソシエイト）を含みます。</p>
 
+<div class="tabs"><button id="tabA" class="on">同じサイズが何冊入る？</button><button id="tabB">手持ちを全部梱包する</button></div>
+<div id="pageA">
+<section class="card">
+<h2>1. 本サイズ</h2>
+<div class="radios" id="presets">
+<label><input type="radio" name="p" value="std" checked>一般的なコミック</label>
+<label><input type="radio" name="p" value="b6">B6判</label>
+<label><input type="radio" name="p" value="a5">A5判</label>
+<label><input type="radio" name="p" value="bunko">文庫本</label>
+<label><input type="radio" name="p" value="custom">自分で入力</label>
+</div>
+<div class="fields">
+<div><label for="bh">高さ(cm)</label><input id="bh" type="number" inputmode="decimal" step="0.1"></div>
+<div><label for="bw">幅(cm)</label><input id="bw" type="number" inputmode="decimal" step="0.1"></div>
+<div><label for="bt">厚さ(cm)</label><input id="bt" type="number" inputmode="decimal" step="0.1"></div>
+</div>
+</section>
+
+<section class="card">
+<h2>2. 箱サイズ(内寸)</h2>
+<div class="fields">
+<div><label for="xw">幅(cm)</label><input id="xw" type="number" inputmode="decimal" step="0.1" value="30"></div>
+<div><label for="xd">奥行き(cm)</label><input id="xd" type="number" inputmode="decimal" step="0.1" value="20"></div>
+<div><label for="xh">高さ(cm)</label><input id="xh" type="number" inputmode="decimal" step="0.1" value="20"></div>
+</div>
+</section>
+
+<section class="card">
+<h2>3. 梱包材</h2>
+<label class="chk"><input type="checkbox" id="pk">梱包材を入れる</label>
+<div class="fields" style="grid-template-columns:1fr"><div><label for="pt">厚さ(cm)</label><input id="pt" type="number" inputmode="decimal" step="0.1" value="1" disabled></div></div>
+<p class="note">※各辺プラス1cmで計算します</p>
+</section>
+
+<section class="card">
+<h2>4. 配置方法</h2>
+<div class="radios three" id="modes">
+<label><input type="radio" name="m" value="stand">縦置き</label>
+<label><input type="radio" name="m" value="flat">平積み</label>
+<label><input type="radio" name="m" value="mix" checked>混合</label>
+</div>
+</section>
+
+<button class="go" id="go">計算する</button>
+
+<div id="out" class="hide" style="margin-top:14px"></div>
+<div class="adslot" data-slot="a"></div>
+</div>
+<div id="pageB" class="hide">
+<section class="card"><h2>1. 手持ちの本（サイズごとの冊数）</h2><div id="bkList"></div><button class="add" id="addBk">＋ サイズを追加</button></section>
+<section class="card"><h2>2. 手持ちの段ボール（内寸cm）</h2><div id="bxList"></div><button class="add" id="addBx">＋ 箱を追加</button>
+<p class="note">個数は、同じサイズの箱が何個あるかです。</p></section>
+<section class="card"><h2>3. 梱包材・配置方法</h2>
+<label class="chk"><input type="checkbox" id="bpk">梱包材を入れる</label>
+<div class="fields" style="grid-template-columns:1fr"><div><label for="bpt">厚さ(cm)</label><input id="bpt" type="number" inputmode="decimal" step="0.1" value="1" disabled></div></div>
+<p class="note">※各辺プラス1cmで計算します</p>
+<div class="radios three" style="margin-top:8px"><label><input type="radio" name="bm" value="stand">縦置き</label><label><input type="radio" name="bm" value="flat">平積み</label><label><input type="radio" name="bm" value="mix" checked>混合</label></div></section>
+<button class="go" id="goB">梱包プランを計算</button>
+<div id="outB" class="hide" style="margin-top:14px"></div>
+<div class="adslot" data-slot="b"></div>
+</div>
+<div class="adslot" data-slot="foot"></div>
+<footer class="ft">
+<p>※配置図（上・正面・側面）は簡易的なイメージ図です。実際の箱や本の縦横比率とは正確には異なる場合があります。</p>
+<p>※計算結果は目安です。本の反り・厚さの個体差・箱の変形・梱包材の圧縮などは考慮していません。実際に詰める際は、必ず現物でご確認ください。</p>
+<p>【広告表記】本ページには、アフィリエイト広告（Amazonアソシエイト・プログラム）へのリンクが含まれています。「PR」と表示されたリンクが該当します。</p>
+<p>Amazonのアソシエイトとして、本の箱詰め計算ツールは適格販売により収入を得ています。</p>
+<p id="adNote" class="hide"></p>
+<p>© 2026 本の箱詰め計算ツール</p>
+</footer>
+</main>
+
+<script>
+/* =====================================================================
+   ★アフィリエイト設定（リンクの差し替えはここだけでOK）
+   tag    : AmazonアソシエイトのトラッキングID（例 'xxxxx-22'）。
+            入れると、すべての検索リンクに自動で ?tag=... が付きます。
+   fixed  : 特定の場所だけ固定URL（amzn.to の短縮リンク等）に差し替えたい時に入れます。
+            空文字 '' なら、tag付きの検索リンクを自動生成します。
+              pageA   … 「同じサイズが何冊入る？」画面の「段ボールを探す」ボタン
+              general … 「手持ちを全部梱包する」画面の最後の「発送用の段ボールを探す」ボタン
+            ※箱サイズごとの検索リンク（足りない分の提案）は常に tag付き検索リンクです。
+   ※ ページ下部の表記（Amazonアソシエイトの文言）は、フッターの文章を直接編集してください。
+   ===================================================================== */
+const AFFILIATE={
+  tag:'',
+  fixed:{pageA:'',general:''}
+};
+/* =====================================================================
+   ★Googleアドセンス設定
+   client : パブリッシャーID（例 'ca-pub-1234567890123456'）。空ならアドセンスは一切読み込みません。
+   slots  : 広告ユニットID（数字）。空の枠は表示されません。
+              a    … 「同じサイズが何冊入る？」画面の結果の下
+              b    … 「手持ちを全部梱包する」画面の結果の下
+              foot … 両画面共通・フッターの上
+   privacyUrl : プライバシーポリシーのURL（空ならリンクは出しません）
+   ※ アドセンスは、ご自身の独自ドメインで公開したページでのみ配信されます。
+   ===================================================================== */
+const ADSENSE={client:'',slots:{a:'',b:'',foot:''},privacyUrl:''};
+let adLoaded=false;
+function fillAds(){
+  if(!ADSENSE.client)return;
+  if(!adLoaded){adLoaded=true;
+    const sc=document.createElement('script');sc.async=true;sc.crossOrigin='anonymous';
+    sc.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+encodeURIComponent(ADSENSE.client);
+    document.head.appendChild(sc);
+    const n=$('adNote');n.classList.remove('hide');
+    n.innerHTML='当サイトはGoogleアドセンスを利用して広告を配信しています。広告配信にCookie等が使用される場合があります。'+(ADSENSE.privacyUrl?'詳しくは<a href="'+ADSENSE.privacyUrl+'" target="_blank" rel="noopener">プライバシーポリシー</a>をご覧ください。':'');
+  }
+  document.querySelectorAll('.adslot').forEach(el=>{
+    const id=ADSENSE.slots[el.dataset.slot];
+    if(!id||el.dataset.done||el.offsetWidth===0)return;
+    el.dataset.done='1';
+    el.innerHTML='<span class="adl">広告</span><ins class="adsbygoogle" style="display:block" data-ad-client="'+ADSENSE.client+'" data-ad-slot="'+id+'" data-ad-format="auto" data-full-width-responsive="true"></ins>';
+    try{(window.adsbygoogle=window.adsbygoogle||[]).push({});}catch(e){}
+  });
+}
+function amzUrl(keyword,slot){
+  if(slot&&AFFILIATE.fixed[slot])return AFFILIATE.fixed[slot];
+  return 'https://www.amazon.co.jp/s?k='+encodeURIComponent(keyword)+(AFFILIATE.tag?'&tag='+encodeURIComponent(AFFILIATE.tag):'');
+}
+const PRESET={std:[17.6,11.3,1.4],b6:[18.2,12.8,1.5],a5:[21.0,14.8,1.5],bunko:[14.8,10.5,1.5]};
+const $=id=>document.getElementById(id);
+const E=1e-9, fl=x=>Math.floor(x+E), r2=x=>Math.round(x*100)/100;
+
+function syncPreset(){
+  const v=document.querySelector('input[name=p]:checked').value, c=v==='custom';
+  ['bh','bw','bt'].forEach((id,i)=>{ $(id).disabled=!c; if(!c)$(id).value=PRESET[v][i]; });
+}
+document.querySelectorAll('input[name=p]').forEach(e=>e.onchange=syncPreset);
+$('pk').onchange=()=>$('pt').disabled=!$('pk').checked;
+syncPreset();
+
+/* ---- 2D guillotine packing of a×b rectangles (rotation allowed) ---- */
+function makePacker(a,b){
+  const memo=new Map();
+  function cuts(L){
+    const s=new Set();
+    for(const u of [a,b]) for(let i=1;i*u<L-E;i++) s.add(r2(i*u));
+    return [...s];
+  }
+  function solve(L,W,d){
+    if(L<Math.min(a,b)-E||W<Math.min(a,b)-E) return {n:0};
+    const k=Math.round(L*100)+'_'+Math.round(W*100)+'_'+d;
+    if(memo.has(k)) return memo.get(k);
+    const n1=fl(L/a)*fl(W/b), n2=fl(L/b)*fl(W/a);
+    let best=n1>=n2?{n:n1,t:'h',o:0}:{n:n2,t:'h',o:1};
+    if(d>0){
+      for(const c of cuts(L)){
+        const n=solve(c,W,d-1).n+solve(L-c,W,d-1).n;
+        if(n>best.n) best={n,t:'x',c,d};
+      }
+      for(const c of cuts(W)){
+        const n=solve(L,c,d-1).n+solve(L,W-c,d-1).n;
+        if(n>best.n) best={n,t:'y',c,d};
+      }
+    }
+    memo.set(k,best); return best;
+  }
+  function build(L,W,ox,oy,d,out,kind){
+    const s=solve(L,W,d); if(!s.n) return;
+    if(s.t==='h'){
+      const [w,h]=s.o?[b,a]:[a,b];
+      for(let i=0;i<fl(L/w);i++)for(let j=0;j<fl(W/h);j++) out.push({x:ox+i*w,y:oy+j*h,w,h,k:kind});
+    }else if(s.t==='x'){build(s.c,W,ox,oy,d-1,out,kind);build(L-s.c,W,ox+s.c,oy,d-1,out,kind);}
+    else{build(L,s.c,ox,oy,d-1,out,kind);build(L,W-s.c,ox,oy+s.c,d-1,out,kind);}
+  }
+  return {count:(L,W)=>solve(L,W,2).n, rects:(L,W,ox,oy,kind)=>{const o=[];build(L,W,ox,oy,2,o,kind);return o;}};
+}
+
+/* ---- candidate search. orientation s: 高さが縦 / u: 幅が縦(90度回転) / f: 厚さが縦(平積み) ---- */
+function search(B,E3,mode,m){
+  const {H,W,T}=B, [EW,ED,EH]=E3;
+  const uW=EW-m, uD=ED-m, uH=EH-m;
+  if(uW<=0||uD<=0||uH<=0) return null;
+  const P={s:{v:H,d:[W,T],pk:makePacker(W,T)},u:{v:W,d:[H,T],pk:makePacker(H,T)},f:{v:T,d:[H,W],pk:makePacker(H,W)}};
+  const fpk=P.f.pk;
+  const lay=k=>k==='f'?Math.max(0,fl(uH/T)):(P[k].v<=uH+E?1:0);
+  const cands=[];
+  const region=(k,L,Wd,ox,oy,withTop)=>{
+    const l=lay(k); if(!l||L<=0||Wd<=0) return null;
+    const r=P[k].pk.rects(L,Wd,ox,oy,k); if(!r.length) return null;
+    r.forEach(x=>x.l=l);
+    let tr=[],tl=0;
+    if(withTop&&k!=='f'){tl=Math.max(0,fl((uH-P[k].v)/T)); if(tl>0) tr=fpk.rects(L,Wd,ox,oy,'t');}
+    return {k,r,l,tr,tl,base:P[k].v};
+  };
+  const mk=(regs)=>{
+    regs=regs.filter(Boolean); if(!regs.length) return;
+    const rects=[].concat(...regs.map(g=>g.r));
+    let mx=0,my=0; rects.forEach(r=>{mx=Math.max(mx,r.x+r.w);my=Math.max(my,r.y+r.h)});
+    const c={s:0,u:0,f:0,top:0}, hs=[], topRects=[]; let ly=0;
+    regs.forEach(g=>{
+      c[g.k]+=g.r.length*g.l;
+      if(g.k==='f'){hs.push(EH-g.l*T);ly=Math.max(ly,g.l);}
+      else if(g.tl>0&&g.tr.length){c.top+=g.tr.length*g.tl;hs.push(EH-g.base-g.tl*T);g.tr.forEach(t=>topRects.push(Object.assign(t,{base:g.base,tl:g.tl})));}
+      else hs.push(EH-g.base);
+    });
+    const cl={w:EW-mx,d:ED-my,h:Math.min(...hs)};
+    const cov=rects.reduce((a,r)=>a+r.w*r.h,0)/(EW*ED);
+    cands.push({cov,rects,topRects,s:c.s,u:c.u,f:c.f,top:c.top,lay:ly,cl,n:c.s+c.u+c.f+c.top,min:Math.min(cl.w,cl.d,cl.h),tot:cl.w+cl.d+cl.h});
+  };
+  const ks=mode==='flat'?['f']:mode==='stand'?['s','u']:['s','u','f'];
+  const withTop=mode==='mix';
+  ks.forEach(k=>mk([region(k,uW,uD,0,0,withTop)]));
+  const set=(L,dims)=>{const q=new Set();dims.forEach(u=>{for(let i=1;i*u<L-E;i++){q.add(r2(i*u));q.add(r2(L-i*u));}});return [...q].filter(c=>c>0.2&&c<L-0.2);};
+  for(const k1 of ks)for(const k2 of ks){
+    if(k1===k2) continue;
+    const dims=P[k1].d.concat(P[k2].d);
+    for(const axis of ['x','y']){
+      const L=axis==='x'?uW:uD;
+      for(const c of set(L,dims)){
+        if(axis==='x') mk([region(k1,c,uD,0,0,withTop),region(k2,L-c,uD,c,0,withTop)]);
+        else mk([region(k1,uW,c,0,0,withTop),region(k2,uW,L-c,0,c,withTop)]);
+      }
+    }
+  }
+  const dc=(p,q)=>mode==='mix'&&Math.abs(q.cov-p.cov)>1e-6?q.cov-p.cov:0;
+  cands.sort((p,q)=>q.n-p.n||dc(p,q)||q.min-p.min||q.tot-p.tot);
+  return cands[0]||null;
+}
+
+function reduceOne(b){
+  const c=Object.assign({},b,{rects:b.rects.map(r=>Object.assign({},r)),topRects:(b.topRects||[]).map(r=>Object.assign({},r))});
+  if(c.top>0){c.top--;c.topRects[c.topRects.length-1].empty=true;c.note='縦置きの上に積む平積み（最上段）の点線位置を1冊分空けてください。';}
+  else{
+    const k=c.f>0?'f':c.u>0?'u':'s'; c[k]--;
+    for(let i=c.rects.length-1;i>=0;i--) if(c.rects[i].k===k){c.rects[i].empty=true;break;}
+    c.note='点線の位置（'+(k==='f'?'最上段の':'')+'1冊分）を空けてください。';
+  }
+  c.n--; c.reduced=true; return c;
+}
+
+function level(c){return c>=3?['問題なし','ok']:c>=1.5?['注意','caution']:c>=0.5?['警告','warn']:['非推奨','ng'];}
+
+function failReason(B,E3,mode){
+  const {H,W,T}=B,[EW,ED,EH]=E3;
+  const vs=mode==='flat'?[T]:mode==='stand'?[H,W]:[H,W,T];
+  if(Math.min(...vs)>EH) return '高さが不足しています。';
+  return '幅・奥行きが不足しています。';
+}
+
+function calc(){
+  const out=$('out'); out.classList.remove('hide');
+  const val=id=>{const s=$(id).value.trim();return s===''?NaN:Number(s);};
+  const B={H:val('bh'),W:val('bw'),T:val('bt')};
+  const X=[val('xw'),val('xd'),val('xh')];
+  const usePk=$('pk').checked, pt=usePk?val('pt'):0;
+  const vals=[B.H,B.W,B.T,...X]; if(usePk) vals.push(pt);
+  if(vals.some(v=>!isFinite(v)||v<=0)){out.innerHTML='<section class="card"><p class="err">すべての入力欄に0より大きい数値を入力してください。</p></section>';return;}
+  const E3=X.map(v=>v-2*pt);
+  if(E3.some(v=>v<=0)){out.innerHTML='<section class="card"><p class="err">梱包材が厚すぎるため、箱内の有効寸法がありません。</p></section>';return;}
+  const mode=document.querySelector('input[name=m]:checked').value;
+  let best=search(B,E3,mode,0.501), risky=false, alt=null;
+  const loose=search(B,E3,mode,0);
+  if(!best&&loose){best=loose;risky=true;if(best.n<=1){out.innerHTML='<section class="card"><p class="err">この箱には余裕を持って収納できません。</p></section>';return;}best=reduceOne(best);risky=false;}
+  else if(best&&loose&&loose.n>best.n) alt=loose.n;
+  if(!best){
+    const why=failReason(B,E3,mode);
+    out.innerHTML='<section class="card"><p class="err">この箱には指定された本を収納できません。</p>'+(why?'<p class="err">'+why+'</p>':'')+'</section>';return;
+  }
+  render(out,B,X,E3,mode,pt,usePk,best,risky,alt);
+}
+
+function title(b,mode){
+  const kinds=[b.s>0,b.u>0,b.f>0,b.top>0].filter(Boolean).length;
+  if(kinds>1) return '混合配置（縦置き＋平積み）';
+  if(b.s) return '縦置き（上辺が上）';
+  if(b.u) return '縦置き（背表紙が上）';
+  return '平積み'+(new Set(b.rects.map(r=>r.w>r.h)).size>1?'（向き混在）':'');
+}
+
+function render(out,B,X,E3,mode,pt,usePk,b,risky,alt){
+  const [lw,lk]=level(b.min);
+  const dirs=[['幅方向',b.cl.w],['奥行方向',b.cl.d],['高さ方向',b.cl.h]];
+  const warns=dirs.filter(d=>d[1]<1.5).map(d=>d[1]<0.5?`<p class="warnline" style="color:var(--ng)">${d[0]}の余裕が${r2(d[1])}cmのため、この配置は非推奨です。</p>`:`<p class="warnline" style="color:var(--warn)">${d[0]}の余裕が${r2(d[1])}cmです。</p>`).join('');
+  const EW=E3[0],ED=E3[1];
+  const sc=Math.max(0.06,0.12);
+  let svg=`<svg class="pv" viewBox="-1 -1 ${EW+2} ${ED+2}" role="img" aria-label="配置プレビュー"><defs><marker id="ah" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 z" fill="#fff"/></marker></defs><rect x="0" y="0" width="${EW}" height="${ED}" fill="none" stroke="currentColor" stroke-width="0.15"/>`;
+  b.rects.forEach(r=>{
+    if(r.empty){svg+=`<rect x="${r2(r.x)}" y="${r2(r.y)}" width="${r2(r.w)}" height="${r2(r.h)}" fill="none" stroke="var(--ng)" stroke-width="0.15" stroke-dasharray="0.4 0.3"/>`;return;}
+    const col=r.k==='f'?'var(--acc)':r.k==='u'?'var(--acc3)':'var(--acc2)';
+    svg+=`<rect x="${r2(r.x)}" y="${r2(r.y)}" width="${r2(r.w)}" height="${r2(r.h)}" fill="${col}" stroke="var(--card)" stroke-width="0.08"/>`;
+    const cx=r.x+r.w/2, cy=r.y+r.h/2, hor=r.w>=r.h, l=(hor?r.w:r.h)*0.3;
+    const d=hor?`M${r2(cx-l)},${r2(cy)} H${r2(cx+l)}`:`M${r2(cx)},${r2(cy+l)} V${r2(cy-l)}`;
+    svg+=`<path d="${d}" stroke="#fff" stroke-width="0.14" marker-end="url(#ah)"/>`;
+  });
+  (b.topRects||[]).forEach(r=>{
+    svg+=`<rect x="${r2(r.x)}" y="${r2(r.y)}" width="${r2(r.w)}" height="${r2(r.h)}" fill="var(--acc)" fill-opacity="${r.empty?0:.12}" stroke="${r.empty?'var(--ng)':'var(--acc)'}" stroke-width="0.15" stroke-dasharray="0.4 0.3"/>`;
+  });
+  svg+='</svg>';
+  const sideSvg=(axis)=>{
+    const Lw=axis==='x'?E3[0]:E3[1], Hh=E3[2], seen=new Set(); let g='';
+    const pa=r=>axis==='x'?[r.x,r.w]:[r.y,r.h];
+    const box=(a,w,yb,h,style,key)=>{if(seen.has(key))return;seen.add(key);g+=`<rect x="${r2(a)}" y="${r2(Hh-yb-h)}" width="${r2(w)}" height="${r2(h)}" ${style}/>`;};
+    const solid=c=>`fill="${c}" fill-opacity=".4" stroke="var(--card)" stroke-width="0.08"`;
+    const col={s:'var(--acc2)',u:'var(--acc3)',f:'var(--acc)'};
+    b.rects.forEach(r=>{const [a,w]=pa(r);
+      if(r.k==='f'){const n=r.empty?r.l-1:r.l;for(let i=0;i<n;i++)box(a,w,i*B.T,B.T,solid(col.f),'f'+i+'_'+a+'_'+w);}
+      else if(!r.empty) box(a,w,0,r.k==='s'?B.H:B.W,solid(col[r.k]),r.k+a+'_'+w);});
+    (b.topRects||[]).forEach(r=>{const [a,w]=pa(r);const n=r.empty?r.tl-1:r.tl;
+      for(let j=0;j<n;j++)box(a,w,r.base+j*B.T,B.T,'fill="none" stroke="var(--acc)" stroke-width="0.12" stroke-dasharray="0.4 0.3"','t'+j+'_'+a+'_'+w+'_'+r.base);});
+    return `<svg class="pv" viewBox="-1 -1 ${Lw+2} ${Hh+2}" role="img"><rect x="0" y="0" width="${Lw}" height="${Hh}" fill="none" stroke="currentColor" stroke-width="0.15"/>${g}</svg>`;
+  };
+  const sides=`<p class="note" style="margin-top:12px"><b>正面から見た図（幅×高さ）</b></p>${sideSvg('x')}<p class="note" style="margin-top:12px"><b>側面から見た図（奥行×高さ）</b></p>${sideSvg('y')}`;
+  const rows=[['箱サイズ(内寸)',X.join(' × ')+' cm'],['梱包材',usePk?'あり（厚さ'+pt+'cm）':'なし'],['計算上の有効寸法',E3.map(r2).join(' × ')+' cm']];
+  const q=amzUrl('段ボール '+X.map(r2).join('x'),'pageA');
+  out.innerHTML=`
+<section class="card">
+  <p class="big">${b.n}<small>冊 収納可能</small></p>
+  <p style="margin:6px 0 2px"><b>おすすめ：${title(b,mode)}</b></p>
+  ${b.reduced?`<p class="warnline" style="color:var(--warn)">余裕が0.5cm以下になるため、1冊減らしました。${b.note}</p>`:''}
+  ${risky?'<p class="err">非推奨：クリアランスが0.5cm未満です</p>':''}
+  ${alt?`<p class="note">余裕0.5cm以下を許容すれば最大${alt}冊（非推奨）</p>`:''}
+  <table style="margin-top:8px">
+    ${b.s?`<tr><th>縦置き・上辺が上</th><td>${b.s}冊</td></tr>`:''}
+    ${b.u?`<tr><th>縦置き・背表紙が上</th><td>${b.u}冊</td></tr>`:''}
+    ${b.f?`<tr><th>平積み</th><td>${b.f}冊${b.lay>1?`（${b.lay}段）`:''}</td></tr>`:''}
+    ${b.top?`<tr><th>縦置きの上に平積み</th><td>${b.top}冊</td></tr>`:''}
+    <tr><th>合計</th><td><b>${b.n}冊</b></td></tr>
+  </table>
+</section>
+<section class="card">
+  <h2>配置プレビュー</h2>
+  <p class="note"><b>上から見た図（幅×奥行き）</b></p>
+  ${svg}${sides}
+  <div class="legend"><span><i style="background:var(--acc2)"></i>縦置き・上辺が上</span><span><i style="background:var(--acc3)"></i>縦置き・背表紙が上</span><span><i style="background:var(--acc)"></i>平積み${b.lay>1?`（各段同じ配置×${b.lay}段）`:''}</span>${b.top?'<span><i style="border:2px dashed var(--acc)"></i>重なる部分（縦置きの上）</span>':''}</div>
+  <p class="note">※上から見た図は箱を真上から見たイメージです。横から見た図は手前から奥へ重なって見えるため、重なる冊は濃く表示されます。矢印は本を置く向きを示しています。</p>
+</section>
+<section class="card">
+  <h2>クリアランス <span class="badge b-${lk}">判定：${lw}</span></h2>
+  <table>${dirs.map(d=>{const[t,k]=level(d[1]);return `<tr><th>${d[0]}</th><td>${r2(d[1])}cm</td><td><span class="badge b-${k}">${t}</span></td></tr>`}).join('')}</table>
+  ${warns}
+  ${CLR}
+</section>
+<section class="card"><h2>箱情報</h2><table>${rows.map(r=>`<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join('')}</table></section>
+<section class="card">
+  <h2>実物の箱詰め例</h2>
+  <div class="photos"><div class="ph">縦置き<br>（写真準備中）</div><div class="ph">平積み<br>（写真準備中）</div><div class="ph">平積み＋90度回転<br>（写真準備中）</div><div class="ph">縦置き＋平積み<br>（写真準備中）</div></div>
+</section>
+<a class="aff" href="${q}" target="_blank" rel="sponsored nofollow noopener">このサイズに近い段ボールを探す</a>
+<p class="note" style="margin-top:12px">※計算は目安です。本の反り・厚さの個体差・箱の変形などは考慮していません。</p>`;
+  out.scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('go').onclick=calc;
+/* ===== ページ切替 ===== */
+function showTab(t){
+  $('pageA').classList.toggle('hide',t!=='A');$('pageB').classList.toggle('hide',t!=='B');
+  $('tabA').classList.toggle('on',t==='A');$('tabB').classList.toggle('on',t==='B');window.scrollTo(0,0);fillAds();
+}
+$('tabA').onclick=()=>showTab('A');$('tabB').onclick=()=>showTab('B');
+
+/* ===== ページB：手持ち一括梱包 ===== */
+const amz=(X)=>amzUrl('段ボール '+X.map(r2).join('x'),'');
+const PN={std:'一般的なコミック',b6:'B6判',a5:'A5判',bunko:'文庫本',custom:'自分で入力'};
+function relabel(){[...document.querySelectorAll('.bk .lt')].forEach((e,i)=>e.textContent='サイズ'+String.fromCharCode(65+i));}
+function addBk(p,cnt){
+  const d=document.createElement('div');d.className='row bk';
+  d.innerHTML=`<div class="rh"><b class="lt"></b><select class="ps">${Object.keys(PN).map(k=>`<option value="${k}">${PN[k]}</option>`).join('')}</select><button type="button" class="x">削除</button></div>
+  <div class="fields f4"><div><label>高さ</label><input class="h" type="number" inputmode="decimal" step="0.1"></div><div><label>幅</label><input class="w" type="number" inputmode="decimal" step="0.1"></div><div><label>厚さ</label><input class="t" type="number" inputmode="decimal" step="0.1"></div><div><label>冊数</label><input class="c" type="number" inputmode="numeric" step="1" value="${cnt||10}"></div></div>`;
+  const ps=d.querySelector('.ps'),ins=['h','w','t'].map(c=>d.querySelector('.'+c));
+  const sync=()=>{const c=ps.value==='custom';ins.forEach((e,i)=>{e.disabled=!c;if(!c)e.value=PRESET[ps.value][i];});};
+  ps.value=p||'std';ps.onchange=sync;sync();
+  d.querySelector('.x').onclick=()=>{if(document.querySelectorAll('.bk').length>1){d.remove();relabel();}};
+  $('bkList').appendChild(d);relabel();
+}
+function addBx(w,dp,h,q){
+  const d=document.createElement('div');d.className='row bxr';
+  d.innerHTML=`<div class="rh"><b>箱</b><button type="button" class="x">削除</button></div>
+  <div class="fields f4"><div><label>幅</label><input class="w" type="number" inputmode="decimal" step="0.1" value="${w||30}"></div><div><label>奥行き</label><input class="d" type="number" inputmode="decimal" step="0.1" value="${dp||20}"></div><div><label>高さ</label><input class="h" type="number" inputmode="decimal" step="0.1" value="${h||20}"></div><div><label>個数</label><input class="q" type="number" inputmode="numeric" step="1" value="${q||3}"></div></div>`;
+  d.querySelector('.x').onclick=()=>{if(document.querySelectorAll('.bxr').length>1)d.remove();};
+  $('bxList').appendChild(d);
+}
+$('addBk').onclick=()=>addBk();$('addBx').onclick=()=>addBx();
+$('bpk').onchange=()=>$('bpt').disabled=!$('bpk').checked;
+addBk('std',10);addBx(30,20,20,3);
+
+const PKS=new Map();
+const getPk=(a,b)=>{const k=a+'_'+b;if(!PKS.has(k))PKS.set(k,makePacker(a,b));return PKS.get(k);};
+const KN={s:'上辺が上',u:'背表紙が上',f:'平積み'};
+/* 複数サイズ混載：箱の床を長方形領域に分け、領域ごとにサイズ・向きを割り当てる */
+function mixFill(E3,types,rem0,mode,m){
+  const [EW,ED,EH]=E3,uW=EW-m,uD=ED-m,uH=EH-m;
+  if(uW<=0||uD<=0||uH<=0)return null;
+  const ks=mode==='flat'?['f']:mode==='stand'?['s','u']:['s','u','f'];
+  const opts=[];
+  types.forEach((t,ti)=>ks.forEach(k=>{
+    const v=k==='s'?t.H:k==='u'?t.W:t.T,d=k==='s'?[t.W,t.T]:k==='u'?[t.H,t.T]:[t.H,t.W];
+    const lay=k==='f'?fl(uH/t.T):(v<=uH+E?1:0);
+    if(lay>0)opts.push({ti,k,lay,v,d,pk:getPk(d[0],d[1]),cuts:{}});
+  }));
+  if(!opts.length)return null;
+  const cutList=(o,full)=>{const key=r2(full);if(o.cuts[key])return o.cuts[key];const q=new Set();o.d.forEach(u=>{for(let i=1;i*u<full-E;i++)q.add(r2(i*u));});q.add(r2(full));return o.cuts[key]=[...q].sort((a,b)=>a-b);};
+  const mkItem=(o,L,Wd,ox,oy,n)=>{
+    let r=o.pk.rects(L,Wd,ox,oy,o.k);const nr=Math.ceil(n/o.lay);r=r.slice(0,nr);
+    r.forEach((x,i)=>{x.l=i<nr-1?o.lay:n-(nr-1)*o.lay;x.ti=o.ti;});
+    const used=rem0.map(()=>0);used[o.ti]=n;
+    return {n,items:[{ti:o.ti,k:o.k,rects:r,v:o.v}],used};
+  };
+  const merge=(a,b)=>({n:a.n+b.n,items:a.items.concat(b.items),used:a.used.map((u,i)=>u+b.used[i])});
+  const rec=(L,Wd,ox,oy,rem,dp)=>{
+    let best={n:0,items:[],used:rem.map(()=>0)};
+    const area=c=>c.items.reduce((a,it)=>a+it.rects.reduce((b,r)=>b+r.w*r.h,0),0);
+    const bt=c=>{if(c.n>best.n||(mode==='mix'&&c.n===best.n&&c.n>0&&area(c)>area(best)+1e-6))best=c;};
+    for(const o of opts){
+      const need=rem[o.ti];if(need<=0)continue;
+      const cap=o.pk.count(L,Wd)*o.lay;if(!cap)continue;
+      if(cap<=need){bt(mkItem(o,L,Wd,ox,oy,cap));continue;}
+      for(const ax of ['x','y']){
+        const full=ax==='x'?L:Wd,cl=cutList(o,full);
+        const cnt=c=>(ax==='x'?o.pk.count(c,Wd):o.pk.count(L,c))*o.lay;
+        let lo=0,hi=cl.length-1;
+        if(cnt(cl[hi])<need)continue;
+        while(lo<hi){const mid=(lo+hi)>>1;if(cnt(cl[mid])>=need)hi=mid;else lo=mid+1;}
+        const c=cl[lo];
+        let res=mkItem(o,ax==='x'?c:L,ax==='x'?Wd:c,ox,oy,need);
+        if(dp>0&&c<full-0.2){
+          const rm=rem.slice();rm[o.ti]-=need;
+          res=merge(res,ax==='x'?rec(L-c,Wd,ox+c,oy,rm,dp-1):rec(L,Wd-c,ox,oy+c,rm,dp-1));
+        }
+        bt(res);
+      }
+    }
+    if(dp>=2){
+      for(const ax of ['x','y']){
+        const full=ax==='x'?L:Wd,q=new Set();
+        opts.forEach(o=>o.d.forEach(u=>{for(let i=1;i*u<full-0.3;i++)q.add(r2(i*u));}));
+        let cs=[...q].sort((a,b)=>a-b);
+        if(cs.length>8){const st=cs.length/8;cs=Array.from({length:8},(_,i)=>cs[Math.floor(i*st)]);}
+        for(const c of cs){
+          const a=ax==='x'?rec(c,Wd,ox,oy,rem,dp-1):rec(L,c,ox,oy,rem,dp-1);
+          if(!a.n)continue;
+          const rm=rem.map((v,i)=>v-a.used[i]);
+          const b=ax==='x'?rec(L-c,Wd,ox+c,oy,rm,dp-1):rec(L,Wd-c,ox,oy+c,rm,dp-1);
+          bt(merge(a,b));
+        }
+      }
+    }
+    return best;
+  };
+  const res=rec(uW,uD,0,0,rem0.slice(),2);
+  if(!res.n)return null;
+  let mx=0,my=0;const hs=[];
+  res.items.forEach(it=>{
+    it.rects.forEach(r=>{mx=Math.max(mx,r.x+r.w);my=Math.max(my,r.y+r.h);});
+    hs.push(it.k==='f'?EH-Math.max(...it.rects.map(r=>r.l))*types[it.ti].T:EH-it.v);
+  });
+  res.cl={w:EW-mx,d:ED-my,h:Math.min(...hs)};res.min=Math.min(res.cl.w,res.cl.d,res.cl.h);
+  res.rects=[].concat(...res.items.map(i=>i.rects));
+  return res;
+}
+function fillBox(X,types,rem,pt,mode){
+  const E3=X.map(v=>v-2*pt);if(E3.some(v=>v<=0))return null;
+  let r=mixFill(E3,types,rem,mode,0.501);
+  if(r){r.E3=E3;return r;}
+  r=mixFill(E3,types,rem,mode,0);
+  if(r&&r.n>1){
+    const it=r.items[r.items.length-1],x=it.rects[it.rects.length-1];
+    if(x.l>1){x.l--;r.note='最上段を1冊分空けてください。';}else{x.empty=true;r.note='点線の位置（1冊分）を空けてください。';}
+    r.used[it.ti]--;r.n--;r.reduced=true;r.E3=E3;return r;
+  }
+  return null;
+}
+const CLR=`<details class="clr"><summary>クリアランス（余裕）とは？</summary>
+<p>箱の有効寸法から、本が使う寸法を引いた「すき間」のことです。幅・奥行き・高さの方向ごとに計算します。すき間が小さいと本を入れにくく、箱が少し歪んだだけで入らなくなることがあります。</p>
+<table><tr><th>余裕</th><th>判定</th></tr><tr><td>3.0cm以上</td><td>問題なし</td></tr><tr><td>1.5cm以上 ～ 3.0cm未満</td><td>注意</td></tr><tr><td>0.5cm以上 ～ 1.5cm未満</td><td>警告</td></tr><tr><td>0.5cm未満</td><td>非推奨</td></tr></table>
+<p>余裕が0.5cm以下になる配置しかない場合は、1冊減らして提案します。判定は箱ごとの一番小さい余裕で決まります。</p></details>`;
+let mid=0;
+function miniSvg(rects,E3,types){
+  const id='mk'+(mid++),EW=E3[0],ED=E3[1];
+  let v=`<svg class="pv" viewBox="-1 -1 ${EW+2} ${ED+2}"><defs><marker id="${id}" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 z" fill="#fff"/></marker></defs><rect x="0" y="0" width="${EW}" height="${ED}" fill="none" stroke="currentColor" stroke-width="0.15"/>`;
+  rects.forEach(r=>{
+    const g=`x="${r2(r.x)}" y="${r2(r.y)}" width="${r2(r.w)}" height="${r2(r.h)}"`;
+    if(r.empty){v+=`<rect ${g} fill="none" stroke="var(--ng)" stroke-width="0.15" stroke-dasharray="0.4 0.3"/>`;return;}
+    v+=`<rect ${g} fill="${r.k==='f'?'var(--acc)':r.k==='u'?'var(--acc3)':'var(--acc2)'}" stroke="var(--card)" stroke-width="0.08"/>`;
+    const hor=r.w>=r.h,long=Math.max(r.w,r.h),short=Math.min(r.w,r.h),hl=long/2,cx=r.x+r.w/2,cy=r.y+r.h/2;
+    const fs=r2(Math.min(short*0.85,long*0.28));
+    v+=`<text x="${r2(hor?cx-hl*0.55:cx)}" y="${r2(hor?cy:cy+hl*0.55)}" font-size="${fs}" fill="#fff" font-weight="700" text-anchor="middle" dominant-baseline="central">${types[r.ti].ch}</text>`;
+    v+=`<path d="${hor?`M${r2(cx-hl*0.2)},${r2(cy)} H${r2(cx+hl*0.7)}`:`M${r2(cx)},${r2(cy+hl*0.2)} V${r2(cy-hl*0.7)}`}" stroke="#fff" stroke-width="0.14" marker-end="url(#${id})"/>`;
+  });
+  return v+'</svg>';
+}
+function miniSide(rects,E3,types,axis){
+  const Lw=axis==='x'?E3[0]:E3[1],Hh=E3[2],seen=new Set();let g='';
+  const col={s:'var(--acc2)',u:'var(--acc3)',f:'var(--acc)'};
+  const box=(a,w,yb,h,r)=>{const key=r.k+r.ti+'_'+r2(a)+'_'+r2(w)+'_'+r2(yb);if(seen.has(key))return;seen.add(key);
+    g+=`<rect x="${r2(a)}" y="${r2(Hh-yb-h)}" width="${r2(w)}" height="${r2(h)}" fill="${col[r.k]}" fill-opacity=".45" stroke="var(--card)" stroke-width="0.08"/>`;
+    g+=`<text x="${r2(a+w/2)}" y="${r2(Hh-yb-h/2)}" font-size="${r2(Math.min(w*0.85,h*0.35))}" fill="var(--fg)" font-weight="700" text-anchor="middle" dominant-baseline="central">${types[r.ti].ch}</text>`;};
+  rects.forEach(r=>{const a=axis==='x'?r.x:r.y,w=axis==='x'?r.w:r.h,t=types[r.ti];
+    if(r.k==='f'){const n=r.empty?r.l-1:r.l;for(let i=0;i<n;i++)box(a,w,i*t.T,t.T,r);}
+    else if(!r.empty)box(a,w,0,r.k==='s'?t.H:t.W,r);});
+  return `<svg class="pv" viewBox="-1 -1 ${Lw+2} ${Hh+2}"><rect x="0" y="0" width="${Lw}" height="${Hh}" fill="none" stroke="currentColor" stroke-width="0.15"/>${g}</svg>`;
+}
+function calcB(){
+  const out=$('outB');out.classList.remove('hide');
+  const num=(e,c)=>{const t=e.querySelector(c).value.trim();return t===''?NaN:Number(t);};
+  const groups=[...document.querySelectorAll('.bk')].map(e=>({H:num(e,'.h'),W:num(e,'.w'),T:num(e,'.t'),c:num(e,'.c')}));
+  const boxes=[];let bad=false;
+  [...document.querySelectorAll('.bxr')].forEach(e=>{const X=[num(e,'.w'),num(e,'.d'),num(e,'.h')],q=num(e,'.q');
+    if(X.some(v=>!isFinite(v)||v<=0)||!isFinite(q)||q<1)bad=true;else for(let i=0;i<fl(q);i++)boxes.push({X,used:false});});
+  const usePk=$('bpk').checked,pt=usePk?Number($('bpt').value):0;
+  if(bad||!boxes.length||groups.some(g=>[g.H,g.W,g.T].some(v=>!isFinite(v)||v<=0)||!isFinite(g.c)||g.c<1)||!isFinite(pt)||pt<0||(usePk&&pt<=0)||groups.length>26){
+    out.innerHTML='<section class="card"><p class="err">すべての欄に正しい数値（冊数・個数は1以上）を入力してください。</p></section>';return;}
+  out.innerHTML='<section class="card"><p>計算中…</p></section>';
+  setTimeout(()=>{
+    const mode=document.querySelector('input[name=bm]:checked').value;
+    const types=groups.map((g,i)=>({H:g.H,W:g.W,T:g.T,c:Math.floor(g.c),ch:String.fromCharCode(65+i)}));
+    let rem=types.map(t=>t.c);const total=rem.reduce((a,b)=>a+b,0),plan=[];
+    const vol=o=>o.x.X[0]*o.x.X[1]*o.x.X[2];
+    while(rem.some(v=>v>0)){
+      const sum=rem.reduce((a,b)=>a+b,0),seen=new Map();
+      const av=boxes.filter(x=>!x.used).map(x=>{const k=x.X.join('x');if(!seen.has(k))seen.set(k,fillBox(x.X,types,rem,pt,mode));return {x,r:seen.get(k)};}).filter(o=>o.r);
+      if(!av.length)break;
+      const all=av.filter(o=>o.r.n>=sum).sort((a,b)=>vol(a)-vol(b));
+      const pick=all.length?all[0]:av.sort((a,b)=>b.r.n-a.r.n||vol(a)-vol(b))[0];
+      pick.x.used=true;rem=rem.map((v,i)=>v-pick.r.used[i]);plan.push({X:pick.x.X,r:pick.r});
+    }
+    const left=[];
+    rem.forEach((v,ti)=>{if(v<=0)return;let best=null;const seen=new Set();
+      boxes.forEach(x=>{const k=x.X.join('x');if(seen.has(k))return;seen.add(k);const rm=rem.map(()=>0);rm[ti]=99999;const r=fillBox(x.X,types,rm,pt,mode);if(r&&(!best||r.n>best.r.n))best={X:x.X,r};});
+      left.push({ti,rem:v,best});});
+    const dim=t=>t.H+'×'+t.W+'×'+t.T+'cm';
+    const done=total-rem.reduce((a,b)=>a+b,0);
+    let h=`<section class="card"><p class="big">${plan.length}<small>個の箱に ${done}/${total}冊 梱包</small></p>`;
+    h+=left.length?`<p class="err">手持ちの箱では全部入りません。あと${total-done}冊分の箱が必要です。</p>`:`<p style="color:var(--ok);font-weight:700;margin:4px 0">手持ちの箱で全冊を梱包できます。</p>`;
+    h+=`<table style="margin-top:6px">${types.map(t=>`<tr><th>${t.ch}</th><td>${dim(t)}</td><td>${t.c}冊</td></tr>`).join('')}</table>
+    <p class="note">異なるサイズも同じ箱に混載します。図の文字（A・B…）は本のサイズ記号で、背表紙に書いておくと詰めるときに迷いません。</p>
+    <div class="legend"><span><i style="background:var(--acc2)"></i>上辺が上</span><span><i style="background:var(--acc3)"></i>背表紙が上</span><span><i style="background:var(--acc)"></i>平積み</span></div>${CLR}</section>`;
+    plan.forEach((p,i)=>{
+      const [lw,lk]=level(p.r.min);
+      const agg=new Map();
+      p.r.items.forEach(it=>{const c=it.rects.reduce((a,r)=>a+(r.empty?0:r.l),0);const k=it.ti+it.k;agg.set(k,(agg.get(k)||{ti:it.ti,k:it.k,c:0}));agg.get(k).c+=c;});
+      h+=`<section class="card"><h2>箱${i+1}：${p.X.join('×')}cm <span class="badge b-${lk}">${lw}</span></h2>
+      <table>${[...agg.values()].filter(a=>a.c>0).map(a=>`<tr><th>${types[a.ti].ch}</th><td>${dim(types[a.ti])}</td><td>${a.c}冊</td><td>${KN[a.k]}</td></tr>`).join('')}</table>
+      <div class="vs"><div class="vp"><p class="note"><b>上から（幅×奥行き）</b></p>${miniSvg(p.r.rects,p.r.E3,types)}</div><div class="vp"><p class="note"><b>正面から（幅×高さ）</b></p>${miniSide(p.r.rects,p.r.E3,types,'x')}</div><div class="vp"><p class="note"><b>側面から（奥行×高さ）</b></p>${miniSide(p.r.rects,p.r.E3,types,'y')}</div></div>
+      <p class="note">← 横にスワイプすると正面図・側面図が見られます →</p>
+      <table>${[['幅方向',p.r.cl.w],['奥行方向',p.r.cl.d],['高さ方向',p.r.cl.h]].map(d=>{const[t,k]=level(d[1]);return `<tr><th>${d[0]}の余裕</th><td>${r2(d[1])}cm</td><td><span class="badge b-${k}">${t}</span></td></tr>`;}).join('')}</table>
+      <p class="note">この箱の合計は${p.r.n}冊。${p.r.rects.some(r=>r.k==='f'&&r.l>1)?'平積みは図の配置を段ごとに重ねます。':''}</p>
+      ${p.r.reduced?`<p class="warnline" style="color:var(--warn)">余裕が0.5cm以下のため1冊減らしています。${p.r.note}</p>`:''}</section>`;
+    });
+    left.forEach(l=>{
+      const t=types[l.ti];
+      h+=`<section class="card"><h2>足りない分：${t.ch}（${dim(t)}）× ${l.rem}冊</h2>`;
+      if(l.best){const n=Math.ceil(l.rem/l.best.r.n);h+=`<p>手持ちと同じ${l.best.X.join('×')}cmの箱なら、あと<b>${n}個</b>で収まります（1個${l.best.r.n}冊）。</p><a class="aff" href="${amz(l.best.X)}" target="_blank" rel="sponsored nofollow noopener">${l.best.X.join('×')}cmの段ボールを探す</a>`;}
+      else h+=`<p class="err">手持ちのどの箱にも入りません。より大きな段ボールが必要です。</p>`;
+      h+='</section>';
+    });
+    h+=`<a class="aff" href="${amzUrl('段ボール 本 発送','general')}" target="_blank" rel="sponsored nofollow noopener">本の発送に使える段ボールを探す</a>`;
+    out.innerHTML=h;out.scrollIntoView({behavior:'smooth',block:'start'});
+  },30);
+}
+$('goB').onclick=calcB;
+fillAds();
+
+</script>
+</body>
+</html>
