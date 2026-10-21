@@ -1,0 +1,27 @@
+
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Google AI and search-related crawling
+User-agent: Googlebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# OpenAI / ChatGPT
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Microsoft Bing
+User-agent: Bingbot
+Allow: /
+
+# Sitemap (add a URL here if you create a sitemap later)
