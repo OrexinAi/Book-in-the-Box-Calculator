@@ -193,8 +193,7 @@ function fillAds(){
   });
 }
 function amzUrl(keyword,slot){
-  if(slot&&AFFILIATE.fixed[slot])return AFFILIATE.fixed[slot];
-  return 'https://www.amazon.co.jp/s?k='+encodeURIComponent(keyword)+(AFFILIATE.tag?'&tag='+encodeURIComponent(AFFILIATE.tag):'');
+  return AFFILIATE.fixed.pageA;
 }
 const PRESET={std:[17.6,11.3,1.4],b6:[18.2,12.8,1.5],a5:[21.0,14.8,1.5],bunko:[14.8,10.5,1.5]};
 const $=id=>document.getElementById(id);
