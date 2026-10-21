@@ -194,7 +194,7 @@ function fillAds(){
 }
 function amzUrl(keyword,slot){
   if(slot&&AFFILIATE.fixed[slot])return AFFILIATE.fixed[slot];
-  return 'https://hb.afl.rakuten.co.jp/hgc/58ad85de.ee56ff55.58ad85df.200e5d68/_RTLink151495?pc=http%3A%2F%2Fwww.rakuten.co.jp%2Flogi-mart%2F&link_type=hybrid_url&ut=eyJwYWdlIjoic2hvcCIsInR5cGUiOiJoeWJyaWRfdXJsIiwiY29sIjoxLCJjYXQiOjEsImJhbiI6NjcyNTk0LCJhbXAiOmZhbHNlfQ%3D%3D');
+  return 'https://www.amazon.co.jp/s?k='+encodeURIComponent(keyword)+(AFFILIATE.tag?'&tag='+encodeURIComponent(AFFILIATE.tag):'');
 }
 const PRESET={std:[17.6,11.3,1.4],b6:[18.2,12.8,1.5],a5:[21.0,14.8,1.5],bunko:[14.8,10.5,1.5]};
 const $=id=>document.getElementById(id);
